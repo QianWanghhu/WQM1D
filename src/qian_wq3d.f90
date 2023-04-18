@@ -39,7 +39,7 @@ SUBROUTINE WQ3D(ISTL_,IS2TL_)
    
   ! *** SET THE HYDRODYNAMIC TIMESTEP
   IF( ISDYNSTP == 0 )THEN  
-    DELT=DT  ! Qian: Time step for initial conditions
+    DELT=DT  ! Qian: Time step for initial conditions; to decide with hydrodynamic module
   ELSE  
     DELT=DTDYN  
   ENDIF  
@@ -48,61 +48,14 @@ SUBROUTINE WQ3D(ISTL_,IS2TL_)
   WQKCNT=WQKCNT+DELT/86400.
   
   ! *** SET THE INITIAL DAYNEXT VALUE
+  ! TIMEDAY is the current day; ITNWQ is the initial time of water quality modeling and starts with 0.
   IF( ITNWQ == 0 )THEN
     DAYNEXT=DBLE(INT(TIMEDAY))+1.
   ENDIF
 
   ! *** PMC - NEW IMPLEMENTATION TO USE DAILY (FROM HOURLY) SOLAR RADIATION FOR ALGAL GROWTH
  
-  IF( ITNWQ == 0 .AND. IWQSUN > 1 .AND. NASER > 0 )THEN
-    ! *** BUILD THE DAILY AVERAGE SOLAR RADIATION FROM THE ASER DATA
-    SUNDAY1 = DAYNEXT-1.
-    SUNDAY2 = DAYNEXT
-
-    ! *** FIND 1ST POINT
-    M = 1
-    DO WHILE (TSATM(1).TIM(M) < SUNDAY1)
-      M = M+1
-    END DO
-    
-    ! *** BUILD THE AVERAGE DAILY SOLAR RADIATION        
-    M1 = 0
-    M2 = 0
-    SUNSOL1 = 0.0
-    DO WHILE (TSATM(1).TIM(M) < SUNDAY1)
-      M1 = M1+1
-      IF( TSATM(1).VAL(M,6) > 0. )THEN
-        M2 = M2+1
-        SUNSOL1=SUNSOL1+TSATM(1).VAL(M,6)
-      ENDIF
-      M = M+1
-    END DO
-    IF( M1 > 0 )THEN
-      SUNFRC1=FLOAT(M2)/FLOAT(M1)
-      SUNSOL1=SUNSOL1/FLOAT(M1)
-    ELSE
-      SUNFRC1=1.0
-    ENDIF
-    
-    ! *** BUILD THE AVERAGE DAILY SOLAR RADIATION        
-    M1 = 0
-    M2 = 0
-    SUNSOL2 = 0.
-    DO WHILE (TSATM(1).TIM(M) < SUNDAY2)
-      M1 = M1+1
-      IF( TSATM(1).VAL(M,6) > 0. )THEN
-        M2 = M2+1
-        SUNSOL2=SUNSOL2+TSATM(1).VAL(M,6)
-      ENDIF
-      M = M+1
-    END DO
-    IF( M1 > 0 )THEN
-      SUNFRC2=FLOAT(M2)/FLOAT(M1)
-      SUNSOL2=SUNSOL2/FLOAT(M1)
-    ELSE
-      SUNFRC2=1.
-    ENDIF
-  ENDIF
+  ! Qian move code for solar radiation calculation to calsolar.f90
 
   ! *** READ INITIAL CONDITIONS
   IF( ITNWQ == 0 )THEN  
@@ -118,19 +71,11 @@ SUBROUTINE WQ3D(ISTL_,IS2TL_)
     IF( IWQSTL == 1 ) CALL RWQSTL(IWQTSTL)   ! HARDWIRE FOR TEMPORALLY CONSTANT 
   ENDIF
 
-  ! *** READ BENTHIC FLUX IF REQUIRED  
+  ! *** READ BENTHIC FLUX IF REQUIRED  (IWQBEN  ==  2)
   ! *** CALL SPATIALLY AND TIME VARYING BENTHIC FLUX HERE.  ONLY CALL WQBENTHIC  
   ! *** IF SIMULATION TIME IS >= THE NEXT TIME IN THE BENTHIC FILE.  
-  IF( IWQBEN  ==  2 )THEN  
-    IF( ISDYNSTP == 0 )THEN  
-      TIMTMP=(DT*FLOAT(N)+TCON*TBEGIN)/86400.  
-    ELSE  
-      TIMTMP=TIMEDAY
-    ENDIF  
-    IF( TIMTMP  >=  BENDAY )THEN  
-      CALL WQBENTHIC(TIMTMP)  
-    ENDIF  
-  ENDIF  
+  ! Qian: this If-EndIf is not required for 1D analysis and shall be deleted.
+  ! IWQBEN == 1: sediment; IWQBEN==2, benthic flux
 
   ! *** UPDATE POINT SOURCE LOADINGS  
   IF( IWQPSL == 1 )THEN
@@ -141,7 +86,7 @@ SUBROUTINE WQ3D(ISTL_,IS2TL_)
     CALL CALCSER(ISTL_)
   ENDIF
 
-  CALL WQWET  
+  CALL WQWET  ! Easy to understand.
 
   ! *** READ SEDIMENT MODEL INITIAL CONDITION  
   IF( IWQBEN == 1 )THEN  
@@ -267,10 +212,11 @@ SUBROUTINE WQ3D(ISTL_,IS2TL_)
 
     ! *** LOAD WQV INTO WQVO FOR REACTION CALCULATION  
     NMALG=0  
+    ! *** Macroalgae always needs to be the last WQ variable since it is not advected
     IF( IDNOTRVA > 0 ) NMALG=1  
-    DO NW=1,NWQV+NMALG  
+    DO NW=1,NWQV+NMALG  !Qian: this step adds the index of Macroalgae to update the total number of water quality variables.
       IF( ISTRWQ(NW) > 0 .OR. (NMALG == 1 .AND. NW == NWQV+NMALG) )THEN  
-        DO K=1,KC  
+        DO K=1,KC  !Qian: this step determines whether there is WQV for transport.
           DO L=2,LA  
             WQVO(L,K,NW) = WQV(L,K,NW)
           ENDDO  
@@ -291,22 +237,20 @@ SUBROUTINE WQ3D(ISTL_,IS2TL_)
     ! ***   CALCULATE KINETIC SOURCES AND SINKS  
     TTDS=DSTIME(0) 
 
-    IF( ISWQLVL == 0 ) CALL WQSKE0  
+    IF( ISWQLVL == 0 ) CALL WQSKE0  ! WQSKE2-4 has been removed in the EFDC code.
     IF( ISWQLVL == 1 ) CALL WQSKE1
-    IF( ISWQLVL == 2 ) CALL WQSKE2  
-    IF( ISWQLVL == 3 ) CALL WQSKE3  
-    IF( ISWQLVL == 4 ) CALL WQSKE4  
     TWQKIN=TWQKIN+(DSTIME(0)-TTDS) 
 
     ! ***   DIAGNOSE NEGATIVE CONCENTRATIONS  
     IF( IWQNC > 0 )CALL WWQNC  
 
     ! ***   CALL SEDIMENT DIAGENSIS MODEL  
-    IF( IWQBEN == 1 )THEN  
-      TTDS=DSTIME(0) 
-      CALL SMMBE  
-      TWQSED=TWQSED+(DSTIME(0)-TTDS) 
-    ENDIF  
+    ! Not needed in 1D model
+    ! IF( IWQBEN == 1 )THEN  
+    !   TTDS=DSTIME(0) 
+    !   CALL SMMBE  
+    !   TWQSED=TWQSED+(DSTIME(0)-TTDS) 
+    ! ENDIF  
 
     ! *** RPEM
     IF( ISRPEM > 0 )THEN

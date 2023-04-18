@@ -22,6 +22,7 @@ SUBROUTINE CALWQC(ISTL_,IS2TL_)
   REAL(RKD)   :: RCDZKK, RCDZKMK, CCLBTMP, CCUBTMP, CCMBTMP, EEB
   REAL(RKD)   :: TTDS         ! MODEL TIMING TEMPORARY VARIABLE
   
+  !If-EndIf counts the number of active WQ variables and create IACTIVEWQ(NACTIVEWQ) to store the index of active WQ variable.
   IF( .NOT. ALLOCATED(IACTIVEWQ) )THEN
     ALLOCATE( IACTIVEWQ(NWQV) )
     IACTIVEWQ = 0
@@ -35,8 +36,12 @@ SUBROUTINE CALWQC(ISTL_,IS2TL_)
     ENDDO
   ENDIF
   
+  !IS2TIM: 0 FOR USING 3 TIME LEVELS;
+  !1 FOR 2 TIME LEVEL, EXPLICIT MOMENTUM SOLUTION
+  !2 FOR 2 TIME LEVEL, IMPLICIT MOMENTUM SOLUTION
+  !Qian: will be a fixed value for our 1D model
   DELT=DT2  
-  IF( IS2TIM >= 1 )THEN  
+  IF( IS2TIM >= 1 )THEN   
     IF( ISDYNSTP == 0 )THEN  
       DELT=DT  
     ELSE  
@@ -52,12 +57,12 @@ SUBROUTINE CALWQC(ISTL_,IS2TL_)
     NW=IACTIVEWQ(ND)
     CALL CALTRAN(ISTL_,IS2TL_,8,NW,WQV(1,1,NW),WQV(1,1,NW),ITHD)
     
-    IF( ISICE > 2 .AND. NW == 19 )THEN !Qian : ISICE determines whether to use ice sub-module
-      ! *** ZERO SURFACE MELT FLUX
-      DO L=1,LC  
-        FQC(L,KC,ITHD)=0.  
-      ENDDO  
-    ENDIF
+    ! IF( ISICE > 2 .AND. NW == 19 )THEN !Qian : ISICE determines whether to use ice sub-module
+    !   ! *** ZERO SURFACE MELT FLUX
+    !   DO L=1,LC  
+    !     FQC(L,KC,ITHD)=0.  
+    !   ENDDO  
+    ! ENDIF
   ENDDO  
   
   TWQADV=TWQADV+(DSTIME(0)-TTDS)  
@@ -87,22 +92,22 @@ SUBROUTINE CALWQC(ISTL_,IS2TL_)
         ENDDO
       ENDDO  
     
-      ! ! *** MIDDLE LAYERS
-      ! DO K=2,KS  
-      !   DO LP=1,LLWET(K-1,ND)
-      !     L=LKWET(LP,K-1,ND) 
-      !     RCDZKMK=-DELT*CDZKMK(L,K)  
-      !     RCDZKK=-DELT*CDZKK(L,K)  
-      !     CCLBTMP=RCDZKMK*HPI(L)*AB(L,K-1)  
-      !     CCUBTMP=RCDZKK*HPI(L)*AB(L,K)  
-      !     CCMBTMP=1._8-CCLBTMP-CCUBTMP  
-      !     EEB=1._8/(CCMBTMP-CCLBTMP*CU1(L,K-1))  
-      !     CU1(L,K)=CCUBTMP*EEB  
-      !     DO IP=1,NWQV
-      !       WQV(L,K,IP) = (WQV(L,K,IP) - CCLBTMP*WQV(L,K-1,IP))*EEB  
-      !     ENDDO
-      !   ENDDO  
-      ! ENDDO  
+      ! *** MIDDLE LAYERS
+      DO K=2,KS  
+        DO LP=1,LLWET(K-1,ND)
+          L=LKWET(LP,K-1,ND) 
+          RCDZKMK=-DELT*CDZKMK(L,K)  
+          RCDZKK=-DELT*CDZKK(L,K)  
+          CCLBTMP=RCDZKMK*HPI(L)*AB(L,K-1)  
+          CCUBTMP=RCDZKK*HPI(L)*AB(L,K)  
+          CCMBTMP=1._8-CCLBTMP-CCUBTMP  
+          EEB=1._8/(CCMBTMP-CCLBTMP*CU1(L,K-1))  
+          CU1(L,K)=CCUBTMP*EEB  
+          DO IP=1,NWQV
+            WQV(L,K,IP) = (WQV(L,K,IP) - CCLBTMP*WQV(L,K-1,IP))*EEB  
+          ENDDO
+        ENDDO  
+      ENDDO  
     
       ! *** TOP LAYER !Qian: only need top layer.
       K=KC  
