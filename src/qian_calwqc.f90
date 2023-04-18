@@ -67,74 +67,11 @@ SUBROUTINE CALWQC(ISTL_,IS2TL_)
   
   TWQADV=TWQADV+(DSTIME(0)-TTDS)  
 
+  ! Qian: Code for vertical diffusion calculation is not required for 1D simulation
+  ! Qian: Delete code for vertical diffusion calculation
   ! **  CALLS TO SOURCE-SINK CALCULATIONS  
   ! **  BYPASS OR INITIALIZE VERTICAL DIFFUSION CALCULATION  
-  IF( KC == 1 ) GOTO 2000  
-
-  ! **  VERTICAL DIFFUSION CALCULATION LEVEL 1  
-  IF( ISWQLVL >= 1 .AND. ISWQLVL <= 3 )THEN
-    TTDS=DSTIME(0)  
-
-    DO ND=1,NDM  
-      LF=(ND-1)*LDMWET+1  
-      LL=MIN(LF+LDMWET-1,LAWET)
-      
-      ! *** BOTTOM LAYER
-      DO LP=1,LLWET(KS,ND)
-        L=LKWET(LP,KS,ND) 
-        RCDZKK=-DELT*CDZKK(L,KSZ(L))  
-        CCUBTMP=RCDZKK*HPI(L)*AB(L,KSZ(L))  
-        CCMBTMP=1._8-CCUBTMP  
-        EEB=1._8/CCMBTMP  
-        CU1(L,KSZ(L))=CCUBTMP*EEB  
-        DO IP=1,NWQV
-          WQV(L,KSZ(L),IP) = WQV(L,KSZ(L),IP)*EEB  
-        ENDDO
-      ENDDO  
-    
-      ! *** MIDDLE LAYERS
-      DO K=2,KS  
-        DO LP=1,LLWET(K-1,ND)
-          L=LKWET(LP,K-1,ND) 
-          RCDZKMK=-DELT*CDZKMK(L,K)  
-          RCDZKK=-DELT*CDZKK(L,K)  
-          CCLBTMP=RCDZKMK*HPI(L)*AB(L,K-1)  
-          CCUBTMP=RCDZKK*HPI(L)*AB(L,K)  
-          CCMBTMP=1._8-CCLBTMP-CCUBTMP  
-          EEB=1._8/(CCMBTMP-CCLBTMP*CU1(L,K-1))  
-          CU1(L,K)=CCUBTMP*EEB  
-          DO IP=1,NWQV
-            WQV(L,K,IP) = (WQV(L,K,IP) - CCLBTMP*WQV(L,K-1,IP))*EEB  
-          ENDDO
-        ENDDO  
-      ENDDO  
-    
-      ! *** TOP LAYER !Qian: only need top layer.
-      K=KC  
-      DO LP=1,LLWET(KS,ND)
-        L=LKWET(LP,KS,ND) 
-        RCDZKMK=-DELT*CDZKMK(L,K)  
-        CCLBTMP=RCDZKMK*HPI(L)*AB(L,K-1)  
-        CCMBTMP=1._8-CCLBTMP  
-        EEB=1._8/(CCMBTMP-CCLBTMP*CU1(L,K-1))  
-        DO IP=1,NWQV
-          WQV(L,K,IP) = (WQV(L,K,IP) - CCLBTMP*WQV(L,K-1,IP))*EEB  
-        ENDDO
-      ENDDO  
-
-      ! *** FINAL PASS
-      DO IP=1,NWQV
-        DO K=KS,1,-1  
-          DO LP=1,LLWET(K,ND)
-            L=LKWET(LP,K,ND)  
-            WQV(L,K,IP) = WQV(L,K,IP) - CU1(L,K)*WQV(L,K+1,IP)  
-          ENDDO
-        ENDDO
-      ENDDO
-    ENDDO
-    TWQDIF=TWQDIF+(DSTIME(0)-TTDS)  
-    
-  ENDIF 
+  IF( KC == 1 ) GOTO 2000   
 
 2000 CONTINUE  
 

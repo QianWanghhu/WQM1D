@@ -87,22 +87,22 @@ SUBROUTINE CALWQC(ISTL_,IS2TL_)
         ENDDO
       ENDDO  
     
-      ! ! *** MIDDLE LAYERS
-      ! DO K=2,KS  
-      !   DO LP=1,LLWET(K-1,ND)
-      !     L=LKWET(LP,K-1,ND) 
-      !     RCDZKMK=-DELT*CDZKMK(L,K)  
-      !     RCDZKK=-DELT*CDZKK(L,K)  
-      !     CCLBTMP=RCDZKMK*HPI(L)*AB(L,K-1)  
-      !     CCUBTMP=RCDZKK*HPI(L)*AB(L,K)  
-      !     CCMBTMP=1._8-CCLBTMP-CCUBTMP  
-      !     EEB=1._8/(CCMBTMP-CCLBTMP*CU1(L,K-1))  
-      !     CU1(L,K)=CCUBTMP*EEB  
-      !     DO IP=1,NWQV
-      !       WQV(L,K,IP) = (WQV(L,K,IP) - CCLBTMP*WQV(L,K-1,IP))*EEB  
-      !     ENDDO
-      !   ENDDO  
-      ! ENDDO  
+      ! *** MIDDLE LAYERS
+      DO K=2,KS  
+        DO LP=1,LLWET(K-1,ND)
+          L=LKWET(LP,K-1,ND) 
+          RCDZKMK=-DELT*CDZKMK(L,K)  
+          RCDZKK=-DELT*CDZKK(L,K)  
+          CCLBTMP=RCDZKMK*HPI(L)*AB(L,K-1)  
+          CCUBTMP=RCDZKK*HPI(L)*AB(L,K)  
+          CCMBTMP=1._8-CCLBTMP-CCUBTMP  
+          EEB=1._8/(CCMBTMP-CCLBTMP*CU1(L,K-1))  
+          CU1(L,K)=CCUBTMP*EEB  
+          DO IP=1,NWQV
+            WQV(L,K,IP) = (WQV(L,K,IP) - CCLBTMP*WQV(L,K-1,IP))*EEB  
+          ENDDO
+        ENDDO  
+      ENDDO  
     
       ! *** TOP LAYER !Qian: only need top layer.
       K=KC  
