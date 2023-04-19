@@ -1,16 +1,5 @@
 SUBROUTINE WQ3D(ISTL_,IS2TL_)  
 
-  !  CONTROL SUBROUTINE FOR WATER QUALITY MODEL  
-  !  ORGINALLY CODED BY K.-Y. PARK  
-  !  OPTIMIZED AND MODIFIED BY J. M. HAMRICK  
-
-  !----------------------------------------------------------------------C  
-  ! CHANGE RECORD  
-  ! DATE MODIFIED     BY               DESCRIPTION
-  !----------------------------------------------------------------------!
-  ! 2011-03           Paul M. Craig      Rewritten to F90 
-  ! 2008                                 Merged SNL and DS-INTL
-
   USE GLOBAL  
   USE WQ_RPEM_MODULE
   USE RESTART_MODULE
