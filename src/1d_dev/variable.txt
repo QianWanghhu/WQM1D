@@ -1,0 +1,36 @@
+###variable from the hydrodynamic module used in wq1d.f90###
+DT is the hydrodynamic time step
+DELT
+TIMEDAY
+ITNWQ
+WQTDMIN=-10
+WQTDMAX=50
+
+
+###Globle variables###
+WQI1 = SOLAR RADIATION ON PREVIOUS DAY  
+WQI2 = SOLAR RADIATION TWO DAYS AGO  
+WQI3 = SOLAR RADIATION THREE DAYS AGO  
+WQI0OPT
+DSTIME returns back the number of seconds since some event
+TTDS
+
+
+
+###variable from input files###
+IWQICI
+IWQAGR
+IWQSTL
+IWQTSTL is the input dataset
+
+NASER: input, NUMBER OF ATMOSPHERIC CONDITION TIME SERIES (0 SETS ALL  ZERO)    
+WQI0: INITIAL IO (LY/D) AT WATER SURFACE
+WQFD: FRACTIONAL DAYLENGTH 
+PARADJ: FRACTION OF SOLAR RADIATION THAT IS PAR
+USESHADE: True or False, determine whether to use SHADING FACTORS
+SOLSWRT = Total Short Wave Incoming Radiation (W/m2)
+ISTRWQ
+NWQTD
+WQKFCB: '* FIRST-ORDER DIE-OFF RATE AT 20OC (/D)'
+
+IWQZ
